@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}注册 - 作文智能评阅系统{% endblock %}
+
+{% block header %}用户注册{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h2>用户注册</h2>
+        <form class="auth-form" method="POST" action="{{ url_for('register') }}">
+            <div class="input-group">
+                <label class="input-label">用户名</label>
+                <input type="text" name="username" class="input-field" required>
+            </div>
+            <div class="input-group">
+                <label class="input-label">邮箱</label>
+                <input type="email" name="email" class="input-field" required>
+            </div>
+            <div class="input-group">
+                <label class="input-label">密码</label>
+                <input type="password" name="password" class="input-field" required>
+            </div>
+            <div class="input-group">
+                <label class="input-label">确认密码</label>
+                <input type="password" name="confirm_password" class="input-field" required>
+            </div>
+            <button type="submit" class="btn auth-btn">
+                <i class="fas fa-user-plus"></i>注册
+            </button>
+            <div class="auth-links">
+                <a href="{{ url_for('login') }}">已有账号？立即登录</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

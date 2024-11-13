@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}作文智能评阅系统{% endblock %}</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/logo.png') }}" type="image/png">
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.4/css/all.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <div class="header">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="AI作文评阅" class="site-logo">
+        <h1>{% block header %}智能作文评阅系统{% endblock %}</h1>
+        <nav class="main-nav">
+            <a href="{{ url_for('index') }}" class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+                <i class="fas fa-pen-alt"></i>作文评阅
+            </a>
+            <a href="{{ url_for('history') }}" class="nav-item {% if request.endpoint == 'history' %}active{% endif %}">
+                <i class="fas fa-history"></i>评阅历史
+            </a>
+            <a href="{{ url_for('examples') }}" class="nav-item {% if request.endpoint == 'examples' %}active{% endif %}">
+                <i class="fas fa-book"></i>优秀范文
+            </a>
+            <a href="{{ url_for('analysis') }}" class="nav-item {% if request.endpoint == 'analysis' %}active{% endif %}">
+                <i class="fas fa-chart-bar"></i>数据分析
+            </a>
+            <a href="{{ url_for('guide') }}" class="nav-item {% if request.endpoint == 'guide' %}active{% endif %}">
+                <i class="fas fa-question-circle"></i>使用指南
+            </a>
+            <div class="user-menu">
+                {% if 'user_id' in session %}
+                    <div class="user-profile" id="userProfile">
+                        <i class="fas fa-user"></i>
+                        <span>{{ session.get('username', '用户') }}</span>
+                    </div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <div class="dropdown-header">
+                            <i class="fas fa-user-circle"></i>
+                            <div class="user-info">
+                                <div class="username">{{ session.get('username', '用户') }}</div>
+                                <div class="email">{{ session.get('email', '') }}</div>
+                            </div>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('logout') }}" class="logout-btn">
+                            <i class="fas fa-sign-out-alt"></i>退出登录
+                        </a>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="login-btn">
+                        <i class="fas fa-sign-in-alt"></i>请登录
+                    </a>
+                {% endif %}
+            </div>
+        </nav>
+    </div>
+
+    {% block content %}{% endblock %}
+
+    <!-- 修改 AI 助手部分 -->
+    {% if 'user_id' in session %}
+    <div class="chat-assistant chat-minimized" id="chatAssistant">
+        <div class="chat-header">
+            <div class="ripple"></div>
+            <div class="ripple"></div>
+            <div class="ripple"></div>
+            <div class="ripple"></div>
+            <div class="ripple"></div>
+            <div class="ripple"></div>
+            <i class="fas fa-robot"></i>
+            <span>AI助手</span>
+            <button class="chat-toggle" id="chatToggle">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        </div>
+        <div class="chat-body">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message assistant">
+                    <div class="message-content">
+                        你好！我是AI助手，有什么可以帮你的吗？
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="messageInput" placeholder="输入消息...">
+                <button id="sendMessage">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <style>
+    .chat-assistant {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        width: 300px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        z-index: 1000;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .chat-assistant.chat-minimized {
+        width: auto;
+        cursor: pointer;
+    }
+
+    .chat-assistant.chat-minimized:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .chat-header {
+        padding: 15px;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 10px 10px 0 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .chat-minimized .chat-header {
+        border-radius: 10px;
+        width: 50px;
+        height: 50px;
+        justify-content: center;
+        overflow: visible;
+        transition: all 0.3s ease;
+    }
+
+    .chat-minimized .chat-header::before {
+        border-radius: 10px;
+    }
+
+    .chat-minimized .chat-header::after {
+        border-radius: 10px;
+    }
+
+    .chat-minimized .chat-header i.fa-robot {
+        position: relative;
+        z-index: 2;
+        color: white;
+        font-size: 1.2em;
+        animation: robotDance 3s ease-in-out infinite;
+    }
+
+    .chat-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--primary-color);
+        z-index: 1;
+    }
+
+    .chat-header::after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+        top: 0;
+        left: 0;
+        border-radius: inherit;
+        animation: breathe 2s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .chat-header > * {
+        position: relative;
+        z-index: 3;
+    }
+
+    .chat-header i.fa-robot {
+        font-size: 1.2em;
+        transition: transform 0.5s ease;
+        color: white;
+    }
+
+    .chat-minimized:hover .chat-header i.fa-robot {
+        animation: robotWave 1s ease infinite;
+    }
+
+    .chat-header:hover::before {
+        background: var(--primary-color-dark);
+    }
+
+    @keyframes breathe {
+        0% {
+            opacity: 0.3;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 0.6;
+            transform: scale(1.05);
+        }
+        100% {
+            opacity: 0.3;
+            transform: scale(1);
+        }
+    }
+
+    .chat-toggle {
+        margin-left: auto;
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+
+    .chat-toggle:hover {
+        transform: scale(1.1);
+    }
+
+    .chat-body {
+        height: 400px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-messages {
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto;
+    }
+
+    .message {
+        margin-bottom: 10px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .message.user {
+        align-items: flex-end;
+    }
+
+    .message-content {
+        max-width: 80%;
+        padding: 10px;
+        border-radius: 10px;
+        background: #f0f2f5;
+    }
+
+    .message.user .message-content {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .chat-input {
+        padding: 15px;
+        display: flex;
+        gap: 10px;
+        border-top: 1px solid #eee;
+    }
+
+    .chat-input input {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        outline: none;
+    }
+
+    .chat-input button {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .chat-minimized .chat-body {
+        display: none;
+    }
+
+    .chat-minimized .chat-header {
+        padding: 15px;
+        border-radius: 10px;
+        width: 50px;
+        height: 50px;
+        justify-content: center;
+    }
+
+    .chat-minimized .chat-header i.fa-robot {
+        position: relative;
+        z-index: 2;
+        color: white;
+        font-size: 1.2em;
+        animation: robotDance 3s ease-in-out infinite;
+    }
+
+    /* 默认的舞动动画 */
+    @keyframes robotDance {
+        0% {
+            transform: rotate(0deg) translateY(0);
+            animation-timing-function: ease-out;
+        }
+        10% {
+            transform: rotate(-12deg) translateY(-2px);
+            animation-timing-function: ease-in;
+        }
+        20% {
+            transform: rotate(12deg) translateY(0);
+            animation-timing-function: ease-out;
+        }
+        25% {
+            transform: rotate(-8deg) translateY(-1px);
+            animation-timing-function: ease-in;
+        }
+        30% {
+            transform: rotate(8deg) translateY(0);
+            animation-timing-function: ease-out;
+        }
+        35% {
+            transform: rotate(0deg) translateY(-1px);
+        }
+        45% {
+            transform: scale(1.1) translateY(-2px);
+            animation-timing-function: ease-in-out;
+        }
+        50% {
+            transform: scale(1) translateY(0);
+        }
+        65% {
+            transform: translateY(-3px) rotate(5deg);
+            animation-timing-function: ease-in;
+        }
+        75% {
+            transform: translateY(0) rotate(-5deg);
+            animation-timing-function: ease-out;
+        }
+        85% {
+            transform: translateY(-2px) rotate(3deg);
+            animation-timing-function: ease-in;
+        }
+        92% {
+            transform: translateY(0) rotate(-3deg);
+            animation-timing-function: ease-out;
+        }
+        100% {
+            transform: rotate(0deg) translateY(0);
+        }
+    }
+
+    /* 悬停时的摆动动画 */
+    .chat-minimized:hover .chat-header i.fa-robot {
+        animation: robotExcited 0.8s ease-in-out infinite;
+    }
+
+    @keyframes robotExcited {
+        0% {
+            transform: scale(1) rotate(0deg) translateY(0);
+        }
+        25% {
+            transform: scale(1.1) rotate(-15deg) translateY(-3px);
+        }
+        50% {
+            transform: scale(1.15) rotate(15deg) translateY(-4px);
+        }
+        75% {
+            transform: scale(1.1) rotate(-15deg) translateY(-3px);
+        }
+        100% {
+            transform: scale(1) rotate(0deg) translateY(0);
+        }
+    }
+
+    .chat-minimized .chat-header span,
+    .chat-minimized .chat-header .chat-toggle {
+        display: none;
+    }
+
+    .chat-minimized .chat-header i {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+
+    /* 悬停时的摇摆动画 */
+    .chat-minimized:hover .chat-header i.fa-robot {
+        animation: robotWave 1s ease infinite;
+    }
+
+    /* 默认的摇头动画 */
+    @keyframes robotShake {
+        0% {
+            transform: rotate(0deg);
+        }
+        25% {
+            transform: rotate(-8deg);
+        }
+        75% {
+            transform: rotate(8deg);
+        }
+        100% {
+            transform: rotate(0deg);
+        }
+    }
+
+    /* 悬时的摆动动画 */
+    @keyframes robotWave {
+        0% {
+            transform: rotate(0deg);
+        }
+        20% {
+            transform: rotate(-15deg);
+        }
+        40% {
+            transform: rotate(15deg);
+        }
+        60% {
+            transform: rotate(-15deg);
+        }
+        80% {
+            transform: rotate(15deg);
+        }
+        100% {
+            transform: rotate(0deg);
+        }
+    }
+
+    /* 修改气泡样式 */
+    .chat-bubble {
+        position: absolute;
+        top: -70px;
+        left: -200px;
+        transform: none;
+        background: white;
+        padding: 15px 20px;
+        border-radius: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        font-size: 15px;
+        color: #333;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        z-index: 1001;
+        min-width: 180px;
+        text-align: left;
+        pointer-events: none;
+    }
+
+    .chat-bubble .text {
+        display: inline-block;
+        min-width: 1em;
+        text-align: left;
+        font-weight: 500;
+        line-height: 1.4;
+        color: #333;
+        opacity: 1;
+        visibility: visible;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .chat-bubble.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        display: block;
+    }
+
+    .chat-bubble::after {
+        content: '';
+        position: absolute;
+        bottom: 20px;
+        right: -10px;
+        transform: none;
+        border-top: 10px solid transparent;
+        border-bottom: 10px solid transparent;
+        border-left: 10px solid white;
+        border-right: none;
+        z-index: 1001;
+    }
+
+    @keyframes bubbleFloat {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-6px);
+        }
+    }
+
+    .chat-bubble .text {
+        display: inline-block;
+        min-width: 1em;
+        text-align: left;
+        font-weight: 500;
+        line-height: 1.4;
+    }
+
+    /* 确保气泡容器不会被其他元素遮 */
+    .chat-header {
+        position: relative;
+        z-index: 1000;
+    }
+
+    /* 调整最小化状态下的位 */
+    .chat-minimized .chat-header {
+        position: relative;
+        overflow: visible;
+    }
+
+    /* 添加气泡出现时的过渡效果 */
+    .chat-bubble {
+        transform: translateY(10px);
+        transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+    }
+
+    .chat-bubble.show {
+        transform: translateY(0);
+    }
+
+    /* 修改最小化状态下的 AI 助手样式 */
+    .chat-minimized .chat-header {
+        border-radius: 10px;
+        width: 50px;
+        height: 50px;
+        justify-content: center;
+        overflow: visible;
+        transition: all 0.3s ease;
+    }
+
+    .chat-minimized .chat-header::before {
+        border-radius: 10px;
+    }
+
+    .chat-minimized .chat-header::after {
+        border-radius: 10px;
+    }
+
+    /* 移除之前的圆形样式 */
+    .chat-minimized .chat-header,
+    .chat-minimized .chat-header::before,
+    .chat-minimized .chat-header::after {
+        border-radius: 10px !important;
+    }
+
+    /* 添加光环动画效果 */
+    .chat-minimized .chat-header::before {
+        content: '';
+        position: absolute;
+        top: -5px;
+        left: -5px;
+        right: -5px;
+        bottom: -5px;
+        background: radial-gradient(circle at center, 
+            rgba(52, 152, 219, 0.3) 0%,
+            rgba(52, 152, 219, 0.2) 30%,
+            rgba(52, 152, 219, 0.1) 60%,
+            rgba(52, 152, 219, 0) 80%);
+        border-radius: 15px;
+        z-index: 0;
+        animation: enhancedPulseGlow 4s ease-in-out infinite;
+    }
+
+    .chat-minimized .chat-header::after {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        border: 2px solid rgba(52, 152, 219, 0.3);
+        border-radius: 12px;
+        z-index: 0;
+        animation: pulseBorder 2s ease-in-out infinite;
+    }
+
+    /* 添加波纹效果 */
+    .chat-minimized .chat-header {
+        position: relative;
+        overflow: visible;
+    }
+
+    .chat-minimized .chat-header .ripple {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        height: 100%;
+        border-radius: 12px;
+        background: transparent;
+        border: 2px solid transparent;
+        animation: enhancedRipple 2.5s linear infinite;
+        background-image: linear-gradient(white, white), 
+                        linear-gradient(to right, #3498db, #ff69b4);
+        background-origin: border-box;
+        background-clip: content-box, border-box;
+    }
+
+    .chat-minimized .chat-header .ripple:nth-child(2) {
+        animation-delay: 0.5s;
+    }
+
+    .chat-minimized .chat-header .ripple:nth-child(3) {
+        animation-delay: 1s;
+    }
+
+    /* 光环动画 */
+    @keyframes pulseGlow {
+        0% {
+            transform: scale(1);
+            opacity: 0.5;
+        }
+        50% {
+            transform: scale(1.2);
+            opacity: 0.2;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 0.5;
+        }
+    }
+
+    /* 边框动画 */
+    @keyframes pulseBorder {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.1);
+            opacity: 0.5;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    /* 波纹动画 */
+    @keyframes ripple {
+        0% {
+            transform: translate(-50%, -50%) scale(0.8);
+            opacity: 0.8;
+        }
+        100% {
+            transform: translate(-50%, -50%) scale(2);
+            opacity: 0;
+        }
+    }
+
+    /* 修改机器人���标容器样式 */
+    .chat-minimized .chat-header i.fa-robot {
+        position: relative;
+        z-index: 2;
+        background: var(--primary-color);
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    /* 添加悬停效果 */
+    .chat-minimized:hover .chat-header::before {
+        animation: pulseGlow 1s ease-in-out infinite;
+    }
+
+    .chat-minimized:hover .chat-header::after {
+        animation: pulseBorder 1s ease-in-out infinite;
+    }
+
+    /* 增强光环效果 */
+    .chat-minimized .chat-header::before {
+        content: '';
+        position: absolute;
+        top: -20px;
+        left: -20px;
+        right: -20px;
+        bottom: -20px;
+        background: radial-gradient(circle at center, 
+            rgba(52, 152, 219, 0.3) 0%,
+            rgba(52, 152, 219, 0.2) 30%,
+            rgba(52, 152, 219, 0.1) 60%,
+            rgba(52, 152, 219, 0) 80%);
+        border-radius: 15px;
+        z-index: 0;
+        animation: enhancedPulseGlow 4s ease-in-out infinite;
+    }
+
+    /* 增强波纹效果 */
+    .chat-minimized .chat-header .ripple {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        height: 100%;
+        border-radius: 12px;
+        background: transparent;
+        border: 2px solid rgba(52, 152, 219, 0.5);
+        animation: enhancedRipple 4s linear infinite;
+    }
+
+    .chat-minimized .chat-header .ripple:nth-child(2) {
+        animation-delay: 1s;
+    }
+
+    .chat-minimized .chat-header .ripple:nth-child(3) {
+        animation-delay: 2s;
+    }
+
+    /* 增强的光环动画 */
+    @keyframes enhancedPulseGlow {
+        0% {
+            transform: scale(1);
+            opacity: 0.8;
+        }
+        50% {
+            transform: scale(1);
+            opacity: 0.2;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 0.8;
+        }
+    }
+
+    /* 增强的波纹动画 */
+    @keyframes enhancedRipple {
+        0% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.8;
+            border-width: 2px;
+            filter: hue-rotate(0deg);
+        }
+        50% {
+            opacity: 0.3;
+            border-width: 1px;
+            filter: hue-rotate(180deg);
+        }
+        100% {
+            transform: translate(-50%, -50%) scale(6);
+            opacity: 0;
+            border-width: 0.5px;
+            filter: hue-rotate(360deg);
+        }
+    }
+
+    /* 添加渐变动画 */
+    @keyframes gradientBorder {
+        0% {
+            border-image: linear-gradient(45deg, #3498db, #ff69b4) 1;
+            filter: hue-rotate(0deg);
+        }
+        50% {
+            border-image: linear-gradient(45deg, #ff69b4, #3498db) 1;
+            filter: hue-rotate(180deg);
+        }
+        100% {
+            border-image: linear-gradient(45deg, #3498db, #ff69b4) 1;
+            filter: hue-rotate(360deg);
+        }
+    }
+
+    /* 确保波纹容器不会被其他元素遮挡 */
+    .chat-minimized .chat-header {
+        position: relative;
+        overflow: visible;
+        z-index: 1;
+    }
+
+    /* 添加渐变光效 */
+    .chat-minimized .chat-header::before {
+        content: '';
+        position: absolute;
+        top: -5px;
+        left: -5px;
+        right: -5px;
+        bottom: -5px;
+        background: linear-gradient(45deg, 
+            rgba(52, 152, 219, 0.3), 
+            rgba(255, 105, 180, 0.3)
+        );
+        border-radius: 15px;
+        z-index: 0;
+        animation: enhancedPulseGlow 4s ease-in-out infinite;
+        filter: blur(5px);
+    }
+
+    /* 修改光环动画 */
+    @keyframes enhancedPulseGlow {
+        0% {
+            opacity: 0.8;
+            filter: hue-rotate(0deg);
+        }
+        50% {
+            opacity: 0.2;
+            filter: hue-rotate(180deg);
+        }
+        100% {
+            opacity: 0.8;
+            filter: hue-rotate(360deg);
+        }
+    }
+
+    /* 确保图标在所有效果之上 */
+    .chat-minimized .chat-header i.fa-robot {
+        position: relative;
+        z-index: 10;
+        background: var(--primary-color);
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 15px rgba(52, 152, 219, 0.3);
+    }
+
+    /* 添加思考中的动画样式 */
+    .thinking {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 10px;
+        background: #f0f2f5;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        max-width: 80px;
+    }
+
+    .thinking-dot {
+        width: 8px;
+        height: 8px;
+        background: var(--primary-color);
+        border-radius: 50%;
+        opacity: 0.6;
+        animation: thinking 1.4s infinite;
+    }
+
+    .thinking-dot:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .thinking-dot:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes thinking {
+        0%, 100% {
+            transform: translateY(0);
+            opacity: 0.6;
+        }
+        50% {
+            transform: translateY(-4px);
+            opacity: 1;
+        }
+    }
+
+    /* 修改消息样式以适应思考动画 */
+    .message {
+        margin-bottom: 10px;
+        display: flex;
+        flex-direction: column;
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .message.fade-in {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    /* 添加光标闪烁效果 */
+    .message.assistant .message-content {
+        position: relative;
+    }
+
+    .message.assistant .message-content::after {
+        content: '|';
+        position: absolute;
+        right: -2px;
+        animation: cursor-blink 1s infinite;
+        display: none;
+    }
+
+    .message.assistant.typing .message-content::after {
+        display: inline;
+    }
+
+    @keyframes cursor-blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+    }
+
+    /* 调整消息样式 */
+    .message-content {
+        max-width: 80%;
+        padding: 10px;
+        border-radius: 10px;
+        background: #f0f2f5;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .message.user .message-content {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    /* 用户菜单样式 */
+    .user-menu {
+        position: relative;
+        margin-left: 1rem;
+    }
+
+    .user-profile {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        transition: var(--transition);
+        background: rgba(52, 152, 219, 0.1);
+    }
+
+    .user-profile:hover {
+        background: rgba(52, 152, 219, 0.2);
+    }
+
+    .login-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: var(--border-radius);
+        background: var(--primary-color);
+        color: white;
+        text-decoration: none;
+        transition: var(--transition);
+    }
+
+    .login-btn:hover {
+        background: var(--primary-color-dark);
+        transform: translateY(-2px);
+    }
+
+    .user-dropdown {
+        position: absolute;
+        top: calc(100% + 0.5rem);
+        right: 0;
+        width: 250px;
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(10px);
+        transition: all 0.3s ease;
+        z-index: 1000;
+    }
+
+    .user-dropdown.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    .dropdown-header {
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background: rgba(52, 152, 219, 0.1);
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
+    }
+
+    .dropdown-header i {
+        font-size: 2.5rem;
+        color: var(--primary-color);
+    }
+
+    .user-info {
+        flex: 1;
+    }
+
+    .username {
+        font-weight: 600;
+        color: var(--secondary-color);
+        margin-bottom: 0.25rem;
+    }
+
+    .email {
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .dropdown-divider {
+        height: 1px;
+        background: #eee;
+        margin: 0.5rem 0;
+    }
+
+    .logout-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem 1.5rem;
+        color: #e74c3c;
+        text-decoration: none;
+        transition: var(--transition);
+    }
+
+    .logout-btn:hover {
+        background: rgba(231, 76, 60, 0.1);
+    }
+
+    /* 添加动画效果 */
+    @keyframes dropdownShow {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 检查是否在登录页面
+        const isLoginPage = window.location.pathname === '/login' || window.location.pathname === '/register';
+        const chatAssistant = document.getElementById('chatAssistant');
+
+        if (chatAssistant) {
+            // 在登录页面隐藏 AI 助手
+            if (isLoginPage) {
+                chatAssistant.style.display = 'none';
+            }
+
+            const chatToggle = document.getElementById('chatToggle');
+            const chatHeader = document.querySelector('.chat-header');
+            const chatMessages = document.getElementById('chatMessages');
+            const messageInput = document.getElementById('messageInput');
+            const sendMessage = document.getElementById('sendMessage');
+
+            // 由于初始状态是最小化的，需要确保图标状态正确
+            const icon = chatToggle.querySelector('i');
+            icon.classList.remove('fa-chevron-down');
+            icon.classList.add('fa-chevron-up');
+
+            // 切换聊天窗口 - 将点击事件监听器绑定到整个header
+            chatHeader.addEventListener('click', (e) => {
+                // 如果点击的是输入框，不触发切换
+                if (e.target.closest('.chat-input')) {
+                    return;
+                }
+                
+                chatAssistant.classList.toggle('chat-minimized');
+                const icon = chatToggle.querySelector('i');
+                if (chatAssistant.classList.contains('chat-minimized')) {
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                } else {
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                }
+            });
+
+            // 添加思考中的动画元素
+            function showThinking() {
+                const thinking = document.createElement('div');
+                thinking.className = 'message assistant thinking-message';
+                thinking.innerHTML = `
+                    <div class="thinking">
+                        <div class="thinking-dot"></div>
+                        <div class="thinking-dot"></div>
+                        <div class="thinking-dot"></div>
+                    </div>
+                `;
+                chatMessages.appendChild(thinking);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                return thinking;
+            }
+
+            // 移除思考中的动画
+            function removeThinking(thinkingElement) {
+                if (thinkingElement && thinkingElement.parentNode) {
+                    thinkingElement.parentNode.removeChild(thinkingElement);
+                }
+            }
+
+            // 添加打字机效果的函数
+            async function typewriterEffect(element, text, speed = 20) {
+                element.textContent = '';
+                for (let i = 0; i < text.length; i++) {
+                    element.textContent += text[i];
+                    await new Promise(resolve => setTimeout(resolve, speed));
+                }
+            }
+
+            // 修改添加消息函数，添加打字机效果
+            async function addMessage(content, type) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type} fade-in`;
+                
+                const messageContent = document.createElement('div');
+                messageContent.className = 'message-content';
+                
+                messageDiv.appendChild(messageContent);
+                chatMessages.appendChild(messageDiv);
+                
+                // 触发重排以启动动画
+                messageDiv.offsetHeight;
+                messageDiv.classList.remove('fade-in');
+                
+                // 如果是AI回复，使用打字机效果
+                if (type === 'assistant') {
+                    await typewriterEffect(messageContent, content);
+                } else {
+                    messageContent.textContent = content;
+                }
+                
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // 修改发送消息函数
+            async function sendMessageToAI() {
+                const message = messageInput.value.trim();
+                if (!message) return;
+
+                // 禁用输入和发送按钮
+                messageInput.disabled = true;
+                sendMessage.disabled = true;
+
+                // 添加用户消息
+                addMessage(message, 'user');
+                messageInput.value = '';
+
+                // 显示思考中动画
+                const thinking = showThinking();
+
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ message })
+                    });
+
+                    const result = await response.json();
+                    
+                    // 移除思考中动画
+                    removeThinking(thinking);
+                    
+                    if (result.success) {
+                        await addMessage(result.data, 'assistant');
+                    } else {
+                        await addMessage('抱歉，我遇到了一些问题。', 'assistant');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    removeThinking(thinking);
+                    await addMessage('抱歉，发生了错误。', 'assistant');
+                } finally {
+                    // 恢复输入和发送按钮
+                    messageInput.disabled = false;
+                    sendMessage.disabled = false;
+                    messageInput.focus();
+                }
+            }
+
+            // 发送消息事件
+            sendMessage.addEventListener('click', sendMessageToAI);
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessageToAI();
+                }
+            });
+        }
+
+        const userProfile = document.getElementById('userProfile');
+        const userDropdown = document.getElementById('userDropdown');
+
+        if (userProfile && userDropdown) {
+            // 点击用户头像显示/隐藏下拉菜单
+            userProfile.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userDropdown.classList.toggle('show');
+            });
+
+            // 点击其他地方关闭下拉菜单
+            document.addEventListener('click', (e) => {
+                if (!userDropdown.contains(e.target) && !userProfile.contains(e.target)) {
+                    userDropdown.classList.remove('show');
+                }
+            });
+
+            // ESC键关闭下拉菜单
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    userDropdown.classList.remove('show');
+                }
+            });
+        }
+    });
+    </script>
+
+    <script src="{{ url_for('static', filename='js/config.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/nav.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html> 

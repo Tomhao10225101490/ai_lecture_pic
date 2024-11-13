@@ -1,0 +1,629 @@
+{% extends "base.html" %}
+
+{% block title %}作文智能评阅系统{% endblock %}
+
+{% block header %}智能作文评阅系统{% endblock %}
+
+{% block styles %}
+<style>
+    .evaluation-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 2rem;
+    }
+
+    .features {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        margin-bottom: 3rem;
+        padding: 1rem;
+    }
+
+    .feature-item {
+        background: white;
+        padding: 2rem;
+        border-radius: var(--border-radius);
+        text-align: center;
+        box-shadow: var(--box-shadow);
+        transition: transform 0.3s ease;
+    }
+
+    .feature-item:hover {
+        transform: translateY(-10px);
+    }
+
+    .feature-item i {
+        font-size: 3rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+
+    .feature-item h3 {
+        color: var(--secondary-color);
+        margin: 1rem 0;
+        font-size: 1.5rem;
+    }
+
+    .feature-item p {
+        color: #666;
+        margin: 0;
+    }
+
+    .input-section {
+        background: white;
+        padding: 2.5rem;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .input-group {
+        margin-bottom: 2rem;
+    }
+
+    .input-label {
+        font-size: 1.1rem;
+        margin-bottom: 0.8rem;
+        display: block;
+        color: var(--secondary-color);
+    }
+
+    .input-with-button {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .title-input {
+        flex: 1;
+        padding: 1rem;
+        border: 2px solid #e1e8ed;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .content-input {
+        flex: 1;
+        padding: 1rem;
+        border: 2px solid #e1e8ed;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+        min-height: 200px;
+        resize: vertical;
+        transition: all 0.3s ease;
+    }
+
+    .title-input:focus, .content-input:focus {
+        border-color: var(--primary-color);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    }
+
+    .speech-btn {
+        padding: 0 1.5rem;
+        background: #f8f9fa;
+        border: 2px solid #e1e8ed;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .speech-btn:hover {
+        background: #e9ecef;
+        border-color: #dee2e6;
+    }
+
+    .speech-btn i {
+        font-size: 1.2rem;
+        color: var(--primary-color);
+    }
+
+    .grade-select {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #e1e8ed;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .grade-select:focus {
+        border-color: var(--primary-color);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    }
+
+    .submit-btn {
+        width: 100%;
+        padding: 1.2rem;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: var(--border-radius);
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.8rem;
+        margin-top: 2rem;
+    }
+
+    .submit-btn:hover {
+        background: #2980b9;
+        transform: translateY(-2px);
+    }
+
+    .submit-btn i {
+        font-size: 1.4rem;
+    }
+
+    @media (max-width: 768px) {
+        .features {
+            grid-template-columns: 1fr;
+        }
+
+        .evaluation-container {
+            padding: 1rem;
+        }
+
+        .input-section {
+            padding: 1.5rem;
+        }
+
+        .input-with-button {
+            flex-direction: column;
+        }
+
+        .speech-btn {
+            width: 100%;
+            justify-content: center;
+            padding: 1rem;
+        }
+    }
+
+    /* 名人名言轮播卡片样式 */
+    .quotes-carousel {
+        max-width: 900px;
+        margin: 0 auto 3rem;
+        position: relative;
+        height: 200px;
+        overflow: hidden;
+    }
+
+    .quote-card {
+        position: absolute;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 2rem;
+        border-radius: var(--border-radius);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.5s ease;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .quote-card.active {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .quote-content {
+        font-size: 1.5rem;
+        color: var(--secondary-color);
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+        font-weight: 300;
+    }
+
+    .quote-author {
+        color: var(--primary-color);
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+
+    .quote-card::before {
+        content: '"';
+        position: absolute;
+        top: 1rem;
+        left: 2rem;
+        font-size: 4rem;
+        color: rgba(52, 152, 219, 0.1);
+        font-family: Georgia, serif;
+    }
+
+    .quote-card::after {
+        content: '"';
+        position: absolute;
+        bottom: 1rem;
+        right: 2rem;
+        font-size: 4rem;
+        color: rgba(52, 152, 219, 0.1);
+        font-family: Georgia, serif;
+    }
+
+    /* 轮播指示器 */
+    .carousel-indicators {
+        position: absolute;
+        bottom: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(52, 152, 219, 0.3);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .indicator.active {
+        background: var(--primary-color);
+        transform: scale(1.2);
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeOutDown {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+    }
+
+    /* 图片上传区域样式 */
+    .content-input-wrapper {
+        width: 100%;
+    }
+
+    .image-upload-area {
+        width: 100%;
+        height: 200px;
+        border: 2px dashed rgba(52, 152, 219, 0.3);
+        border-radius: var(--border-radius);
+        background: rgba(255, 255, 255, 0.5);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        margin-top: 0.5rem;
+    }
+
+    .image-upload-area.drag-over {
+        border-color: var(--primary-color);
+        background: rgba(52, 152, 219, 0.05);
+        transform: scale(1.02);
+    }
+
+    .upload-placeholder {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: #666;
+        width: 100%;
+        padding: 1rem;
+    }
+
+    .upload-placeholder i {
+        font-size: 2.5rem;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+        opacity: 0.8;
+        transition: all 0.3s ease;
+    }
+
+    .image-upload-area:hover .upload-placeholder i {
+        transform: translateY(-5px);
+        opacity: 1;
+    }
+
+    .image-preview {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        background: rgba(255, 255, 255, 0.8);
+    }
+
+    .image-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        transition: all 0.3s ease;
+    }
+
+    .image-actions {
+        position: absolute;
+        bottom: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 0.8rem;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 0.5rem;
+        border-radius: var(--border-radius);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+
+    .image-preview:hover .image-actions {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-5px);
+    }
+
+    .action-btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: var(--border-radius);
+        background: var(--primary-color);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+    }
+
+    .ocr-loading {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.95);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        backdrop-filter: blur(5px);
+    }
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(52, 152, 219, 0.1);
+        border-top-color: var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .ocr-loading p {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* 添加标签提示样式 */
+    .label-tip {
+        font-size: 0.9rem;
+        color: #666;
+        font-weight: normal;
+        margin-left: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="evaluation-container">
+    <!-- 添加名人名言轮播 -->
+    <div class="quotes-carousel">
+        <div class="quote-card active">
+            <div class="quote-content">
+                "文章千古事，得失寸心知。"
+            </div>
+            <div class="quote-author">— 杜甫</div>
+        </div>
+        <div class="quote-card">
+            <div class="quote-content">
+                "文章本天成，妙手偶得之。"
+            </div>
+            <div class="quote-author">— 谢灵运</div>
+        </div>
+        <div class="quote-card">
+            <div class="quote-content">
+                "读书破万卷，下笔如神。"
+            </div>
+            <div class="quote-author">— 杜甫</div>
+        </div>
+        <div class="quote-card">
+            <div class="quote-content">
+                "笔落惊风雨，诗成泣鬼神。"
+            </div>
+            <div class="quote-author">— 李商隐</div>
+        </div>
+        <div class="carousel-indicators"></div>
+    </div>
+
+    <!-- 原有的功能特性部分 -->
+    <div class="features">
+        <div class="feature-item">
+            <i class="fas fa-robot"></i>
+            <h3>AI智能评阅</h3>
+            <p>专业的评分标准</p>
+        </div>
+        <div class="feature-item">
+            <i class="fas fa-chart-line"></i>
+            <h3>多维��分析</h3>
+            <p>全方位评价反馈</p>
+        </div>
+        <div class="feature-item">
+            <i class="fas fa-lightbulb"></i>
+            <h3>个性化建议</h3>
+            <p>针对性改进意见</p>
+        </div>
+    </div>
+
+    <div class="input-section">
+        <div class="input-group">
+            <label class="input-label">年级选择</label>
+            <select id="gradeLevel" class="grade-select">
+                <option value="primary">小学</option>
+                <option value="junior">初中</option>
+                <option value="senior">高中</option>
+            </select>
+        </div>
+        
+        <div class="input-group">
+            <label class="input-label">作文标题</label>
+            <div class="input-with-button">
+                <input type="text" id="title" placeholder="请输入作文标题" class="title-input">
+                <button id="titleSpeechBtn" class="speech-btn">
+                    <i class="fas fa-microphone"></i>语音输入
+                </button>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">作文内容</label>
+            <div class="content-input-wrapper">
+                <div class="input-with-button" style="width: 100%;">
+                    <textarea id="content" placeholder="请输入作文内容" class="content-input"></textarea>
+                    <button id="contentSpeechBtn" class="speech-btn">
+                        <i class="fas fa-microphone"></i>语音输入
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">
+                <i class="fas fa-image"></i>
+                图片识别
+                <span class="label-tip">支持上传手写作文图片，自动识别文字</span>
+            </label>
+            <div class="image-upload-area" id="imageUploadArea">
+                <input type="file" id="imageInput" accept="image/*" hidden>
+                <div class="upload-placeholder">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>点击或拖拽上传作文图片</p>
+                    <span class="upload-tip">支持 jpg、png 格式</span>
+                </div>
+                <div class="image-preview" id="imagePreview" style="display: none;">
+                    <img src="" alt="作文图片预览">
+                    <div class="image-actions">
+                        <button class="action-btn" onclick="window.imageUploader.startOCR()">
+                            <i class="fas fa-font"></i>识别文字
+                        </button>
+                        <button class="action-btn" onclick="window.imageUploader.removeImage()">
+                            <i class="fas fa-trash"></i>删除图片
+                        </button>
+                    </div>
+                </div>
+                <div class="ocr-loading" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <p>正在识别文字，请稍候...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="input-group">
+            <label for="essayType" class="input-label">文章类型</label>
+            <select id="essayType" class="input-field">
+                <option value="记叙文">记叙文</option>
+                <option value="议论文">议论文</option>
+                <option value="说明文">说明文</option>
+                <option value="应用文">应用文</option>
+            </select>
+        </div>
+        
+        <button id="submitBtn" class="submit-btn">
+            <i class="fas fa-pen-fancy"></i>开始评阅
+        </button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quotes = document.querySelectorAll('.quote-card');
+    const carousel = document.querySelector('.quotes-carousel');
+    const indicatorsContainer = document.querySelector('.carousel-indicators');
+    let currentIndex = 0;
+    let interval;
+
+    // 创建指示器
+    quotes.forEach((_, index) => {
+        const indicator = document.createElement('div');
+        indicator.className = `indicator ${index === 0 ? 'active' : ''}`;
+        indicator.addEventListener('click', () => goToSlide(index));
+        indicatorsContainer.appendChild(indicator);
+    });
+
+    const indicators = document.querySelectorAll('.indicator');
+
+    function goToSlide(index) {
+        // 移除当前活动的卡片和指示器
+        quotes[currentIndex].classList.remove('active');
+        indicators[currentIndex].classList.remove('active');
+
+        // 激活新的卡片和指示器
+        currentIndex = index;
+        quotes[currentIndex].classList.add('active');
+        indicators[currentIndex].classList.add('active');
+    }
+
+    function nextSlide() {
+        const nextIndex = (currentIndex + 1) % quotes.length;
+        goToSlide(nextIndex);
+    }
+
+    // 自动轮播
+    function startCarousel() {
+        interval = setInterval(nextSlide, 5000);
+    }
+
+    function stopCarousel() {
+        clearInterval(interval);
+    }
+
+    // 鼠标悬停时暂停轮播
+    carousel.addEventListener('mouseenter', stopCarousel);
+    carousel.addEventListener('mouseleave', startCarousel);
+
+    // 开始轮播
+    startCarousel();
+});
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/evaluation.js') }}"></script>
+{% endblock %} 

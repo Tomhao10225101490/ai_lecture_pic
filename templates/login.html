@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}登录 - 作文智能评阅系统{% endblock %}
+
+{% block header %}用户登录{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h2>用户登录</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        <form class="auth-form" method="POST" action="{{ url_for('login') }}">
+            <div class="input-group">
+                <label class="input-label">用户名</label>
+                <input type="text" name="username" class="input-field" required>
+            </div>
+            <div class="input-group">
+                <label class="input-label">密码</label>
+                <input type="password" name="password" class="input-field" required>
+            </div>
+            <button type="submit" class="btn auth-btn">
+                <i class="fas fa-sign-in-alt"></i>登录
+            </button>
+            <div class="auth-links">
+                <a href="{{ url_for('register') }}">没有账号？立即注册</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* 添加一些特定于登录页面的样式 */
+    .auth-card {
+        animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .flash-messages {
+        margin-bottom: 1.5rem;
+    }
+
+    .flash-message {
+        padding: 0.8rem 1.2rem;
+        border-radius: var(--border-radius);
+        margin-bottom: 0.5rem;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .flash-message.error {
+        background: rgba(231, 76, 60, 0.1);
+        color: #e74c3c;
+        border: 1px solid rgba(231, 76, 60, 0.2);
+    }
+
+    .flash-message.success {
+        background: rgba(46, 204, 113, 0.1);
+        color: #2ecc71;
+        border: 1px solid rgba(46, 204, 113, 0.2);
+    }
+
+    .input-group {
+        position: relative;
+    }
+
+    .input-field {
+        padding-left: 2.5rem;
+    }
+
+    .input-group::before {
+        content: '';
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        {#transform: translateY(-50%);#}
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        color: #95a5a6;
+    }
+
+    .input-group:nth-child(1)::before {
+        content: '\f007';  /* 用户图标 */
+    }
+
+    .input-group:nth-child(2)::before {
+        content: '\f023';  /* 锁图标 */
+    }
+
+    .auth-btn {
+        margin-top: 1rem;
+    }
+
+    .auth-links {
+        margin-top: 1.5rem;
+        font-size: 0.9rem;
+    }
+
+    .auth-links a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %} 

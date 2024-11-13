@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}优秀范文 - 作文智能评阅系统{% endblock %}
+
+{% block header %}优秀范文{% endblock %}
+
+{% block styles %}
+<style>
+    .examples-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 2rem;
+    }
+
+    .examples-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 2rem;
+    }
+
+    .example-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+
+    .example-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .example-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .example-content {
+        padding: 1.5rem;
+    }
+
+    .example-title {
+        color: var(--secondary-color);
+        margin: 0 0 1rem 0;
+    }
+
+    .example-meta {
+        display: flex;
+        gap: 1rem;
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    .example-preview {
+        color: #444;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .read-more {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: var(--primary-color);
+        color: white;
+        border-radius: var(--border-radius);
+        text-decoration: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .read-more:hover {
+        opacity: 0.9;
+    }
+
+    .filters {
+        margin-bottom: 2rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-select {
+        padding: 0.8rem;
+        border: 2px solid #e1e8ed;
+        border-radius: var(--border-radius);
+        background: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="examples-container">
+    <div class="filters">
+        <select class="filter-select" data-type="grade">
+            <option value="all">全部年级</option>
+            <option value="primary">小学</option>
+            <option value="junior">初中</option>
+            <option value="senior">高中</option>
+        </select>
+        <select class="filter-select" data-type="type">
+            <option value="all">全部类型</option>
+            <option value="narrative">记叙文</option>
+            <option value="argumentative">议论文</option>
+            <option value="descriptive">说明文</option>
+            <option value="practical">应用文</option>
+        </select>
+    </div>
+
+    <div class="examples-grid">
+        <div class="example-card">
+            <img src="{{ url_for('static', filename='images/tutorial.jpg') }}" alt="范文配图" class="example-image">
+            <div class="example-content">
+                <h3 class="example-title">春天的早晨</h3>
+                <div class="example-meta">
+                    <span><i class="fas fa-graduation-cap"></i> 高中</span>
+                    <span><i class="fas fa-tag"></i> 记叙文</span>
+                </div>
+                <p class="example-preview">
+                    清晨，第一缕阳光透过窗帘洒在书桌上，我推开窗，深深地呼吸着春天的气息...
+                </p>
+                <a href="#" class="read-more">阅读全文</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/examples.js') }}"></script>
+{% endblock %} 

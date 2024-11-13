@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}评阅历史 - 作文智能评阅系统{% endblock %}
+
+{% block header %}评阅历史{% endblock %}
+
+{% block styles %}
+<style>
+    .history-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 2rem;
+    }
+
+    .history-list {
+        background: white;
+        padding: 2rem;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+    }
+
+    .history-item {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e1e8ed;
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 2rem;
+        align-items: center;
+        transition: background-color 0.3s ease;
+    }
+
+    .history-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .history-info h3 {
+        margin: 0 0 0.5rem 0;
+        color: var(--secondary-color);
+    }
+
+    .history-meta {
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .history-score {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        padding: 0.5rem 1rem;
+        background: rgba(74, 144, 226, 0.1);
+        border-radius: var(--border-radius);
+    }
+
+    .history-actions {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .action-btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .view-btn {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .delete-btn {
+        background: #dc3545;
+        color: white;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-2px);
+        opacity: 0.9;
+    }
+
+    .filters {
+        margin-bottom: 2rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-select {
+        padding: 0.8rem;
+        border: 2px solid #e1e8ed;
+        border-radius: var(--border-radius);
+        background: white;
+    }
+
+    @media (max-width: 768px) {
+        .history-item {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .history-actions {
+            justify-content: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="history-container">
+    <div class="filters">
+        <select class="filter-select" data-type="grade">
+            <option value="all">全部年级</option>
+            <option value="primary">小学</option>
+            <option value="junior">初中</option>
+            <option value="senior">高中</option>
+        </select>
+        <select class="filter-select" data-type="time">
+            <option value="all">全部时间</option>
+            <option value="week">最近一周</option>
+            <option value="month">最近一月</option>
+            <option value="year">最近一年</option>
+        </select>
+    </div>
+
+    <div class="history-list">
+        <div class="history-item">
+            <div class="history-info">
+                <h3>我的理想生活</h3>
+                <div class="history-meta">
+                    <span><i class="fas fa-graduation-cap"></i> 高中</span>
+                    <span><i class="fas fa-calendar"></i> 2024-03-20</span>
+                </div>
+            </div>
+            <div class="history-score">92分</div>
+            <div class="history-actions">
+                <button class="action-btn view-btn">
+                    <i class="fas fa-eye"></i>查看
+                </button>
+                <button class="action-btn delete-btn">
+                    <i class="fas fa-trash"></i>删除
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/history.js') }}"></script>
+{% endblock %} 

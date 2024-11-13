@@ -439,6 +439,117 @@
         font-weight: normal;
         margin-left: 0.5rem;
     }
+
+    /* 添加多图片预览相关样式 */
+    .image-preview-container {
+        width: 100%;
+        height: 100%;
+        padding: 1rem;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.8);
+    }
+
+    .image-list {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        padding-bottom: 1rem;
+        height: calc(100% - 60px);
+        margin-bottom: 1rem;
+    }
+
+    .image-list::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .image-list::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 4px;
+    }
+
+    .image-list::-webkit-scrollbar-thumb {
+        background: var(--primary-color);
+        border-radius: 4px;
+    }
+
+    .image-item {
+        position: relative;
+        min-width: 150px;
+        height: 100%;
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .image-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .image-item .item-number {
+        position: absolute;
+        top: 0.5rem;
+        left: 0.5rem;
+        background: rgba(52, 152, 219, 0.9);
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    .image-item .remove-btn {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: rgba(231, 76, 60, 0.9);
+        color: white;
+        width: 24px;
+        height: 24px;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .image-item:hover .remove-btn {
+        opacity: 1;
+    }
+
+    .preview-actions {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .drag-indicator {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(52, 152, 219, 0.95);
+        padding: 1rem;
+        border-radius: var(--border-radius);
+        color: white;
+        font-weight: 500;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .image-upload-area.drag-over .drag-indicator {
+        opacity: 1;
+    }
 </style>
 {% endblock %}
 
@@ -482,7 +593,7 @@
         </div>
         <div class="feature-item">
             <i class="fas fa-chart-line"></i>
-            <h3>多维��分析</h3>
+            <h3>多维度分析</h3>
             <p>全方位评价反馈</p>
         </div>
         <div class="feature-item">
@@ -528,23 +639,23 @@
             <label class="input-label">
                 <i class="fas fa-image"></i>
                 图片识别
-                <span class="label-tip">支持上传手写作文图片，自动识别文字</span>
+                <span class="label-tip">支持上传多张手写作文图片，自动按顺序识别文字</span>
             </label>
             <div class="image-upload-area" id="imageUploadArea">
-                <input type="file" id="imageInput" accept="image/*" hidden>
+                <input type="file" id="imageInput" accept="image/*" multiple hidden>
                 <div class="upload-placeholder">
                     <i class="fas fa-cloud-upload-alt"></i>
                     <p>点击或拖拽上传作文图片</p>
-                    <span class="upload-tip">支持 jpg、png 格式</span>
+                    <span class="upload-tip">支持多张图片，按顺序排列</span>
                 </div>
-                <div class="image-preview" id="imagePreview" style="display: none;">
-                    <img src="" alt="作文图片预览">
-                    <div class="image-actions">
+                <div class="image-preview-container" id="imagePreviewContainer" style="display: none;">
+                    <div class="image-list" id="imageList"></div>
+                    <div class="preview-actions">
                         <button class="action-btn" onclick="window.imageUploader.startOCR()">
-                            <i class="fas fa-font"></i>识别文字
+                            <i class="fas fa-font"></i>识别全部文字
                         </button>
-                        <button class="action-btn" onclick="window.imageUploader.removeImage()">
-                            <i class="fas fa-trash"></i>删除图片
+                        <button class="action-btn" onclick="window.imageUploader.removeAllImages()">
+                            <i class="fas fa-trash"></i>清除全部
                         </button>
                     </div>
                 </div>

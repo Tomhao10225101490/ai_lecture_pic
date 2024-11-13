@@ -221,30 +221,31 @@ class ImageUploader {
     constructor() {
         this.uploadArea = document.getElementById('imageUploadArea');
         this.imageInput = document.getElementById('imageInput');
-        this.imagePreview = document.getElementById('imagePreview');
+        this.imagePreviewContainer = document.getElementById('imagePreviewContainer');
+        this.imageList = document.getElementById('imageList');
         this.contentInput = document.getElementById('content');
         this.ocrLoading = document.querySelector('.ocr-loading');
         this.uploadPlaceholder = document.querySelector('.upload-placeholder');
         
-        this.initializeEventListeners();
+        this.images = [];  // 存储图片文件的数组
         
-        // 将实例添加到window对象，以便HTML中的onclick能够访问
+        this.initializeEventListeners();
         window.imageUploader = this;
     }
 
     initializeEventListeners() {
         // 点击上传区域触发文件选择
         this.uploadArea.addEventListener('click', (e) => {
-            if (!this.imagePreview.contains(e.target)) {
+            if (!e.target.closest('.preview-actions') && !e.target.closest('.remove-btn')) {
                 this.imageInput.click();
             }
         });
 
         // 文件选择处理
         this.imageInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                this.handleImage(file);
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                this.addImages(files);
             }
         });
 
@@ -261,59 +262,94 @@ class ImageUploader {
         this.uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
             this.uploadArea.classList.remove('drag-over');
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
-                this.handleImage(file);
+            const files = Array.from(e.dataTransfer.files).filter(file => 
+                file.type.startsWith('image/')
+            );
+            if (files.length > 0) {
+                this.addImages(files);
             }
         });
     }
 
-    handleImage(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = this.imagePreview.querySelector('img');
-            img.src = e.target.result;
-            this.imagePreview.style.display = 'block';  // 使用style.display而不是hidden
-            this.uploadPlaceholder.style.display = 'none';  // 隐藏上传占位符
-        };
-        reader.readAsDataURL(file);
+    addImages(files) {
+        // 将新文件添加到图片数组
+        this.images.push(...files);
+        this.updateImagePreview();
+    }
+
+    updateImagePreview() {
+        if (this.images.length === 0) {
+            this.imagePreviewContainer.style.display = 'none';
+            this.uploadPlaceholder.style.display = 'block';
+            return;
+        }
+
+        this.imagePreviewContainer.style.display = 'block';
+        this.uploadPlaceholder.style.display = 'none';
+
+        // 更新图片预览列表
+        this.imageList.innerHTML = this.images.map((file, index) => `
+            <div class="image-item" data-index="${index}">
+                <img src="${URL.createObjectURL(file)}" alt="图片 ${index + 1}">
+                <div class="item-number">${index + 1}</div>
+                <button class="remove-btn" onclick="window.imageUploader.removeImage(${index})">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    removeImage(index) {
+        this.images.splice(index, 1);
+        this.updateImagePreview();
+    }
+
+    removeAllImages() {
+        this.images = [];
+        this.updateImagePreview();
     }
 
     async startOCR() {
+        if (this.images.length === 0) {
+            alert('请先上传图片');
+            return;
+        }
+
         try {
-            const file = this.imageInput.files[0];
-            if (!file) return;
+            this.ocrLoading.style.display = 'flex';
+            let allText = '';
 
-            this.ocrLoading.style.display = 'flex';  // 使用flex显示加载状态
-            
-            const formData = new FormData();
-            formData.append('image', file);
+            // 按顺序处理每张图片
+            for (let i = 0; i < this.images.length; i++) {
+                const formData = new FormData();
+                formData.append('image', this.images[i]);
 
-            const response = await fetch('/api/ocr', {
-                method: 'POST',
-                body: formData
-            });
+                const response = await fetch('/api/ocr', {
+                    method: 'POST',
+                    body: formData
+                });
 
-            const result = await response.json();
-            
-            if (result.success) {
-                this.contentInput.value = result.text;
-                this.removeImage();  // 识别完成后清除图片
-            } else {
-                throw new Error(result.message || '文字识别失败');
+                const result = await response.json();
+                
+                if (result.success) {
+                    allText += (i > 0 ? '\n' : '') + result.text;
+                } else {
+                    throw new Error(`第 ${i + 1} 张图片识别失败`);
+                }
             }
+
+            // 更新文本框内容
+            this.contentInput.value = allText;
+            
+            // 清除图片
+            this.removeAllImages();
+            
         } catch (error) {
             console.error('OCR Error:', error);
             alert(error.message || '文字识别失败，请重试');
         } finally {
             this.ocrLoading.style.display = 'none';
         }
-    }
-
-    removeImage() {
-        this.imageInput.value = '';
-        this.imagePreview.style.display = 'none';
-        this.uploadPlaceholder.style.display = 'block';
     }
 }
 
